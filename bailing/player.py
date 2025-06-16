@@ -9,7 +9,7 @@ from pydub import  AudioSegment
 import pygame
 import sounddevice as sd
 import numpy as np
-from playsound import playsound
+from playsound3 import playsound
 
 
 logger = logging.getLogger(__name__)
@@ -155,7 +155,7 @@ class PygameSoundPlayer(AbstractPlayer):
             while pygame.mixer.get_busy(): #current_sound.get_busy():  # 检查当前音频是否正在播放
                 pygame.time.Clock().tick(100)  # 每秒检查100次
             del current_sound
-            logger.debug(f"PygameSoundPlayer 播放完成")
+            logger.debug("PygameSoundPlayer 播放完成")
         except Exception as e:
             logger.error(f"播放音频失败: {e}")
 
