@@ -1,3 +1,9 @@
+try:
+    from reload_dll.reload import load_platform_libraries
+
+    load_platform_libraries()
+except ImportError:
+    pass
 import argparse
 import json
 import logging

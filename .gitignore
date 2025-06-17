@@ -171,3 +171,7 @@ cython_debug/
 
 # VS Code
 .vscode/
+
+# Config
+config/*.yaml
+Taskfile.yaml
