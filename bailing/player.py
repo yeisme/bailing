@@ -5,7 +5,7 @@ import subprocess
 import threading
 import wave
 import pyaudio
-from pydub import  AudioSegment
+from pydub import AudioSegment
 import pygame
 import sounddevice as sd
 import numpy as np
@@ -96,11 +96,13 @@ class PyaudioPlayer(AbstractPlayer):
     def do_playing(self, audio_file):
         chunk = 1024
         try:
-            with wave.open(audio_file, 'rb') as wf:
-                stream = self.p.open(format=self.p.get_format_from_width(wf.getsampwidth()),
-                                     channels=wf.getnchannels(),
-                                     rate=wf.getframerate(),
-                                     output=True)
+            with wave.open(audio_file, "rb") as wf:
+                stream = self.p.open(
+                    format=self.p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                )
                 data = wf.readframes(chunk)
                 while data:
                     stream.write(data)
@@ -136,14 +138,20 @@ class PygamePlayer(AbstractPlayer):
 
     def get_playing_status(self):
         """正在播放和队列非空，为正在播放状态"""
-        return self.is_playing or (not self.play_queue.empty()) or pygame.mixer.music.get_busy()
+        return (
+            self.is_playing
+            or (not self.play_queue.empty())
+            or pygame.mixer.music.get_busy()
+        )
 
     def stop(self):
         super().stop()
         pygame.mixer.music.stop()
 
+
 class PygameSoundPlayer(AbstractPlayer):
     """支持预加载"""
+
     def __init__(self, *args, **kwargs):
         super(PygameSoundPlayer, self).__init__(*args, **kwargs)
         pygame.mixer.init()
@@ -152,7 +160,9 @@ class PygameSoundPlayer(AbstractPlayer):
         try:
             logger.debug("PygameSoundPlayer 播放音频中")
             current_sound.play()  # 播放音频
-            while pygame.mixer.get_busy(): #current_sound.get_busy():  # 检查当前音频是否正在播放
+            while (
+                pygame.mixer.get_busy()
+            ):  # current_sound.get_busy():  # 检查当前音频是否正在播放
                 pygame.time.Clock().tick(100)  # 每秒检查100次
             del current_sound
             logger.debug("PygameSoundPlayer 播放完成")
@@ -172,7 +182,7 @@ class PygameSoundPlayer(AbstractPlayer):
 class SoundDevicePlayer(AbstractPlayer):
     def do_playing(self, audio_file):
         try:
-            wf = wave.open(audio_file, 'rb')
+            wf = wave.open(audio_file, "rb")
             data = wf.readframes(wf.getnframes())
             sd.play(np.frombuffer(data, dtype=np.int16), samplerate=wf.getframerate())
             sd.wait()
@@ -217,7 +227,7 @@ def create_instance(class_name, *args, **kwargs):
     cls = globals().get(class_name)
     if cls:
         # 创建并返回实例
-        print(args,kwargs)
+        print(args, kwargs)
         return cls(*args, **kwargs)
     else:
         raise ValueError(f"Class {class_name} not found")

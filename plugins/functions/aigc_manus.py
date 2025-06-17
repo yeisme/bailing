@@ -12,6 +12,7 @@ from app.agent.manus import Manus
 
 agent = Manus()
 
+
 def parser_result(messages):
     if not isinstance(messages, list):
         return "任务执行失败"
@@ -22,7 +23,8 @@ def parser_result(messages):
             continue
         return message.content
 
-@register_function('aigc_manus', ToolType.TIME_CONSUMING)
+
+@register_function("aigc_manus", ToolType.TIME_CONSUMING)
 def aigc_manus(prompt: str):
     """
     "可以帮你做任何事情的，通用ai",
@@ -31,7 +33,10 @@ def aigc_manus(prompt: str):
     asyncio.run(agent.run(prompt))
     logger.info("Request processing completed.")
     result = parser_result(agent.messages)
-    return ActionResponse(Action.REQLLM, result, "好的，正在帮您处理，处理完会通知您的哦！")
+    return ActionResponse(
+        Action.REQLLM, result, "好的，正在帮您处理，处理完会通知您的哦！"
+    )
+
 
 if __name__ == "__main__":
     rsp = aigc_manus("帮我查一下关于manus的信息，并写一篇报告，保存到本地")

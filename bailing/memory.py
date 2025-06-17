@@ -26,6 +26,7 @@ ${dialogue_history}
 - 输出对话摘要，用户对话偏好，用户对话风格，以及下次应该采取的对话策略
 """
 
+
 class Memory:
     def __init__(self, config):
         file_path = config.get("dialogue_history_path")
@@ -33,7 +34,7 @@ class Memory:
         if os.path.isfile(self.memory_file):
             self.memory = read_json_file(self.memory_file)
         else:
-            self.memory = {"history_memory_file":[], "memory":""}
+            self.memory = {"history_memory_file": [], "memory": ""}
 
         self.model_name = config.get("model_name")
         self.api_key = config.get("api_key")
@@ -44,19 +45,23 @@ class Memory:
 
         write_json_file(self.memory_file, self.memory)
 
-
     def get_memory(self):
         return self.memory["memory"]
 
     def update_memory(self, file_name, dialogue_history):
-        memory_prompt = memory_prompt_template.replace("${dialogue_abstract}", self.memory["memory"])\
-            .replace("${dialogue_history}", dialogue_history).strip()
+        memory_prompt = (
+            memory_prompt_template.replace(
+                "${dialogue_abstract}", self.memory["memory"]
+            )
+            .replace("${dialogue_history}", dialogue_history)
+            .strip()
+        )
         new_memory = None
         try:
             responses = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=[{"role":"user", "content":memory_prompt}],
-                stream=False
+                messages=[{"role": "user", "content": memory_prompt}],
+                stream=False,
             )
             new_memory = responses.choices[0].message.content
         except Exception as e:
@@ -68,7 +73,7 @@ class Memory:
     @staticmethod
     def extract_time_from_filename(filename):
         """从文件名中提取时间信息"""
-        match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', filename)
+        match = re.search(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", filename)
         if match:
             return match.group(1)
         return None
@@ -76,7 +81,7 @@ class Memory:
     @staticmethod
     def read_dialogue_file(file_path):
         """读取 JSON 对话文件并返回对话列表"""
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             try:
                 dialogues = json.load(file)
                 return dialogues
@@ -89,20 +94,20 @@ class Memory:
         """打印对话内容"""
         dialogues_str = list()
         for dialogue in dialogues:
-            role = dialogue.get('role', '未知角色')
-            content = dialogue.get('content', '')
+            role = dialogue.get("role", "未知角色")
+            content = dialogue.get("content", "")
             logger.debug(f"{role}: {content}")
-            dialogues_str.append(role +": " + content)
+            dialogues_str.append(role + ": " + content)
         return "\n".join(dialogues_str)
 
     def read_dialogues_in_order(self, directory):
         """读取指定目录下的所有对话文件，按时间顺序排列"""
         # 获取所有符合命名规则的文件路径
-        pattern = os.path.join(directory, 'dialogue-*-*-*.json')
+        pattern = os.path.join(directory, "dialogue-*-*-*.json")
         files = glob.glob(pattern)
 
         # 按时间排序
-        #files.sort(key=lambda x: x.split('-')[1:4])  # 根据时间部分进行排序
+        # files.sort(key=lambda x: x.split('-')[1:4])  # 根据时间部分进行排序
         files.sort(key=lambda x: self.extract_time_from_filename(os.path.basename(x)))
 
         # 读取并打印所有对话

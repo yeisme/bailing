@@ -21,29 +21,27 @@ class OpenAILLM(LLM):
 
     def response(self, dialogue):
         try:
-            responses = self.client.chat.completions.create(  #) ChatCompletion.create(
-                model=self.model_name,
-                messages=dialogue,
-                stream=True
+            responses = self.client.chat.completions.create(  # ) ChatCompletion.create(
+                model=self.model_name, messages=dialogue, stream=True
             )
             for chunk in responses:
                 yield chunk.choices[0].delta.content
-                #yield chunk.choices[0].delta.get("content", "")
+                # yield chunk.choices[0].delta.get("content", "")
         except Exception as e:
             logger.error(f"Error in response generation: {e}")
 
     def response_call(self, dialogue, functions_call):
         try:
-            responses = self.client.chat.completions.create(  #) ChatCompletion.create(
+            responses = self.client.chat.completions.create(  # ) ChatCompletion.create(
                 model=self.model_name,
                 messages=dialogue,
                 stream=True,
-                tools=functions_call
+                tools=functions_call,
             )
-            #print(responses)
+            # print(responses)
             for chunk in responses:
                 yield chunk.choices[0].delta.content, chunk.choices[0].delta.tool_calls
-                #yield chunk.choices[0].delta.get("content", "")
+                # yield chunk.choices[0].delta.get("content", "")
         except Exception as e:
             logger.error(f"Error in response generation: {e}")
 
@@ -60,7 +58,9 @@ def create_instance(class_name, *args, **kwargs):
 
 if __name__ == "__main__":
     # 创建 DeepSeekLLM 的实例
-    deepseek = create_instance("DeepSeekLLM", api_key="your_api_key", base_url="your_base_url")
+    deepseek = create_instance(
+        "DeepSeekLLM", api_key="your_api_key", base_url="your_base_url"
+    )
     dialogue = [{"role": "user", "content": "hello"}]
 
     # 打印逐步生成的响应内容

@@ -5,7 +5,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@register_function('open_application', action=ToolType.NONE)
+
+@register_function("open_application", action=ToolType.NONE)
 def open_application(app_name):
     """
     打开指定的 macOS 应用程序。
@@ -15,7 +16,7 @@ def open_application(app_name):
     """
     try:
         # 使用 subprocess 调用 open 命令打开应用程序
-        subprocess.run(['open', '-a', app_name], check=True)
+        subprocess.run(["open", "-a", app_name], check=True)
         logger.info(f"{app_name} 已成功启动！")
         response = "好的，正在帮你打开应用"
         return ActionResponse(Action.RESPONSE, None, response)
@@ -23,5 +24,3 @@ def open_application(app_name):
         logger.error(f"无法启动应用程序: {app_name}")
         response = "打开应用失败"
         return ActionResponse(Action.REQLLM, response, None)
-
-

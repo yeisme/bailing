@@ -17,11 +17,11 @@ class ASR(ABC):
     def _save_audio_to_file(audio_data, file_path):
         """将音频数据保存为WAV文件"""
         try:
-            with wave.open(file_path, 'wb') as wf:
+            with wave.open(file_path, "wb") as wf:
                 wf.setnchannels(1)
                 wf.setsampwidth(2)
                 wf.setframerate(16000)
-                wf.writeframes(b''.join(audio_data))
+                wf.writeframes(b"".join(audio_data))
             logger.info(f"ASR识别文件录音保存到：{file_path}")
         except Exception as e:
             logger.error(f"保存音频文件时发生错误: {e}")
@@ -42,13 +42,15 @@ class FunASR(ASR):
             model=self.model_dir,
             vad_kwargs={"max_single_segment_time": 30000},
             disable_update=True,
-            hub="hf"
+            hub="hf",
             # device="cuda:0",  # 如果有GPU，可以解开这行并指定设备
         )
 
     def recognizer(self, stream_in_audio):
         try:
-            tmpfile = os.path.join(self.output_dir, f"asr-{datetime.now().date()}@{uuid.uuid4().hex}.wav")
+            tmpfile = os.path.join(
+                self.output_dir, f"asr-{datetime.now().date()}@{uuid.uuid4().hex}.wav"
+            )
             self._save_audio_to_file(stream_in_audio, tmpfile)
 
             res = self.model.generate(

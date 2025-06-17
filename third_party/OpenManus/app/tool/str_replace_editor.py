@@ -128,7 +128,7 @@ class StrReplaceEditor(BaseTool):
             result = self.undo_edit(_path)
         else:
             raise ToolError(
-                f'Unrecognized command {command}. The allowed commands for the {self.name} tool are: {", ".join(get_args(Command))}'
+                f"Unrecognized command {command}. The allowed commands for the {self.name} tool are: {', '.join(get_args(Command))}"
             )
         return str(result)
 

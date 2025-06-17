@@ -1,6 +1,6 @@
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_chroma import Chroma
-from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_core.prompts import PromptTemplate
 
 from langchain_core.output_parsers import StrOutputParser
@@ -17,10 +17,11 @@ prompt_template = """请根据以下上下文回答最后的问题。如果你�
 
 有帮助的答案："""
 
+
 class Rag:
     _instance = None
 
-    def __new__(cls, config: dict=None):
+    def __new__(cls, config: dict = None):
         if cls._instance is None:
             cls._instance = super(Rag, cls).__new__(cls)
             cls._instance.init(config)  # 初始化实例属性
@@ -31,38 +32,43 @@ class Rag:
         self.emb_model = config.get("emb_model")
         self.template = prompt_template
         self.custom_rag_prompt = PromptTemplate.from_template(self.template)
-        self.llm = ChatOpenAI(model=config.get("model_name")
-                              , base_url=config.get("base_url"), api_key=config.get("api_key"))
-        # 定义加载器，支持不同文档类型
-        loader = DirectoryLoader(
-            self.doc_path,
-            glob="**/*.md",
-            loader_cls= TextLoader
+        self.llm = ChatOpenAI(
+            model=config.get("model_name"),
+            base_url=config.get("base_url"),
+            api_key=config.get("api_key"),
         )
+        # 定义加载器，支持不同文档类型
+        loader = DirectoryLoader(self.doc_path, glob="**/*.md", loader_cls=TextLoader)
         documents = loader.load()
 
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=200
+        )
         splits = text_splitter.split_documents(documents)
 
-        model_kwargs = {'device': 'cpu'}
-        encode_kwargs = {'normalize_embeddings': True}
-        embedding_model = HuggingFaceBgeEmbeddings(model_name=self.emb_model
-                                                   , model_kwargs=model_kwargs
-                                                   , encode_kwargs=encode_kwargs)
+        model_kwargs = {"device": "cpu"}
+        encode_kwargs = {"normalize_embeddings": True}
+        embedding_model = HuggingFaceBgeEmbeddings(
+            model_name=self.emb_model,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs,
+        )
 
-        #embeddings = embedding_model.embed_documents([doc.content for doc in documents])
-        #vector_store = FAISS.from_embeddings(documents=splits, embedding=embeddings)
-        vector_store = Chroma.from_documents(documents=splits, embedding=embedding_model)
+        # embeddings = embedding_model.embed_documents([doc.content for doc in documents])
+        # vector_store = FAISS.from_embeddings(documents=splits, embedding=embeddings)
+        vector_store = Chroma.from_documents(
+            documents=splits, embedding=embedding_model
+        )
         retriever = vector_store.as_retriever()
 
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
 
         self.rag_chain = (
-                {"context": retriever | format_docs, "question": RunnablePassthrough()}
-                | self.custom_rag_prompt
-                | self.llm
-                | StrOutputParser()
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | self.custom_rag_prompt
+            | self.llm
+            | StrOutputParser()
         )
 
     def query(self, query):

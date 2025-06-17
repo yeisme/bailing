@@ -4,6 +4,7 @@ from typing import List
 
 from app.tool.search.base import WebSearchEngine
 
+
 class BingSearchEngine(WebSearchEngine):
     name: str = "bing_search"
     description: str = """Perform a Bing search and return a list of relevant links."""
@@ -30,7 +31,7 @@ class BingSearchEngine(WebSearchEngine):
         url = "https://www.bing.com/search"
         params = {"q": query}
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36"
         }
         response = requests.get(url, params=params, headers=headers)
 

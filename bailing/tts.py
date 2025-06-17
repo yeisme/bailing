@@ -33,7 +33,10 @@ class GTTS(AbstractTTS):
         self.lang = config.get("lang")
 
     def _generate_filename(self, extension=".aiff"):
-        return os.path.join(self.output_file, f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}")
+        return os.path.join(
+            self.output_file,
+            f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}",
+        )
 
     def _log_execution_time(self, start_time):
         end_time = time.time()
@@ -65,7 +68,10 @@ class MacTTS(AbstractTTS):
         self.output_file = config.get("output_file")
 
     def _generate_filename(self, extension=".aiff"):
-        return os.path.join(self.output_file, f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}")
+        return os.path.join(
+            self.output_file,
+            f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}",
+        )
 
     def _log_execution_time(self, start_time):
         end_time = time.time()
@@ -99,7 +105,10 @@ class EdgeTTS(AbstractTTS):
         self.voice = config.get("voice")
 
     def _generate_filename(self, extension=".wav"):
-        return os.path.join(self.output_file, f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}")
+        return os.path.join(
+            self.output_file,
+            f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}",
+        )
 
     def _log_execution_time(self, start_time):
         end_time = time.time()
@@ -107,7 +116,9 @@ class EdgeTTS(AbstractTTS):
         logger.debug(f"Execution Time: {execution_time:.2f} seconds")
 
     async def text_to_speak(self, text, output_file):
-        communicate = edge_tts.Communicate(text, voice=self.voice)  # Use your preferred voice
+        communicate = edge_tts.Communicate(
+            text, voice=self.voice
+        )  # Use your preferred voice
         await communicate.save(output_file)
 
     def to_tts(self, text):
@@ -130,7 +141,10 @@ class CHATTTS(AbstractTTS):
         self.rand_spk = self.chat.sample_random_speaker()
 
     def _generate_filename(self, extension=".wav"):
-        return os.path.join(self.output_file, f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}")
+        return os.path.join(
+            self.output_file,
+            f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}",
+        )
 
     def _log_execution_time(self, start_time):
         end_time = time.time()
@@ -143,12 +157,12 @@ class CHATTTS(AbstractTTS):
         try:
             params_infer_code = ChatTTS.Chat.InferCodeParams(
                 spk_emb=self.rand_spk,  # add sampled speaker
-                temperature=.3,  # using custom temperature
+                temperature=0.3,  # using custom temperature
                 top_P=0.7,  # top P decode
                 top_K=20,  # top K decode
             )
             params_refine_text = ChatTTS.Chat.RefineTextParams(
-                prompt='[oral_2][laugh_0][break_6]',
+                prompt="[oral_2][laugh_0][break_6]",
             )
             wavs = self.chat.infer(
                 [text],
@@ -166,17 +180,22 @@ class CHATTTS(AbstractTTS):
             return None
 
 
-
 class KOKOROTTS(AbstractTTS):
     def __init__(self, config):
         from kokoro import KPipeline
+
         self.output_file = config.get("output_file", ".")
         self.lang = config.get("lang", "z")
-        self.pipeline = KPipeline(lang_code=self.lang)  # <= make sure lang_code matches voice
+        self.pipeline = KPipeline(
+            lang_code=self.lang
+        )  # <= make sure lang_code matches voice
         self.voice = config.get("voice", "zm_yunyang")
 
     def _generate_filename(self, extension=".wav"):
-        return os.path.join(self.output_file, f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}")
+        return os.path.join(
+            self.output_file,
+            f"tts-{datetime.now().date()}@{uuid.uuid4().hex}{extension}",
+        )
 
     def _log_execution_time(self, start_time):
         end_time = time.time()
@@ -188,8 +207,10 @@ class KOKOROTTS(AbstractTTS):
         start_time = time.time()
         try:
             generator = self.pipeline(
-                text, voice=self.voice,  # <= change voice here
-                speed=1, split_pattern=r'\n+'
+                text,
+                voice=self.voice,  # <= change voice here
+                speed=1,
+                split_pattern=r"\n+",
             )
             for i, (gs, ps, audio) in enumerate(generator):
                 logger.debug(f"KOKOROTTS: i: {i}, gs：{gs}, ps：{ps}")  # i => index
@@ -199,7 +220,6 @@ class KOKOROTTS(AbstractTTS):
         except Exception as e:
             logger.error(f"Failed to generate TTS file: {e}")
             return None
-
 
 
 def create_instance(class_name, *args, **kwargs):

@@ -8,8 +8,8 @@ from plugins.registry import register_function, ToolType
 from plugins.registry import ActionResponse, Action
 
 
-
 logger = logging.getLogger(__name__)
+
 
 class TaskScheduler:
     def __init__(self):
@@ -50,7 +50,7 @@ scheduler_thread = threading.Thread(target=scheduler.run_scheduler)
 scheduler_thread.start()
 
 
-@register_function('schedule_task', action=ToolType.SCHEDULER)
+@register_function("schedule_task", action=ToolType.SCHEDULER)
 def schedule_task(time_str, content):
     """
     创建一个定时任务。
@@ -60,11 +60,13 @@ def schedule_task(time_str, content):
         content (str): 任务的内容，比如 '提醒我喝水'。
     """
     scheduler.schedule_task(content, time_str, content)
-    return ActionResponse(Action.RESPONSE, None, "好的，已帮您创建好定时提醒任务，时间到了我会提醒您哦")
+    return ActionResponse(
+        Action.RESPONSE, None, "好的，已帮您创建好定时提醒任务，时间到了我会提醒您哦"
+    )
+
 
 # 示例：使用 TaskScheduler 创建和管理任务
 if __name__ == "__main__":
-
     # 创建一些任务
     scheduler.schedule_task("task1", "08:00", "提醒我喝水")
     scheduler.schedule_task("task2", "09:00", "提醒我吃早餐")
@@ -86,5 +88,3 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         print("调度器停止。")
-
-

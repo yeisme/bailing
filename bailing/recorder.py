@@ -32,7 +32,7 @@ class RecorderPyAudio(AbstractRecorder):
     def start_recording(self, audio_queue: queue.Queue):
         if self.running:
             raise RuntimeError("Stream already running")
-        
+
         def stream_thread():
             try:
                 self.stream = self.py_audio.open(
@@ -40,7 +40,7 @@ class RecorderPyAudio(AbstractRecorder):
                     channels=self.channels,
                     rate=self.rate,
                     input=True,
-                    frames_per_buffer=self.chunk
+                    frames_per_buffer=self.chunk,
                 )
                 self.running = True
                 while self.running:
@@ -57,13 +57,13 @@ class RecorderPyAudio(AbstractRecorder):
     def stop_recording(self):
         if not self.running:
             return
-        
+
         self.running = False
         if self.stream:
             self.stream.stop_stream()
             self.stream.close()
             self.stream = None
-        
+
         if self.py_audio:
             self.py_audio.terminate()
 
@@ -91,4 +91,3 @@ if __name__ == "__main__":
     recorderPyAudio = RecorderPyAudio()
     recorderPyAudio.start_recording()
     time.sleep(10)
-

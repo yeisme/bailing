@@ -6,8 +6,19 @@ from bailing.utils import write_json_file
 
 
 class Message:
-    def __init__(self, role: str, content: str = None, uniq_id: str = None, start_time: datetime = None, end_time: datetime = None,
-                 audio_file: str = None, tts_file: str = None, vad_status: list = None, tool_calls = None, tool_call_id=None):
+    def __init__(
+        self,
+        role: str,
+        content: str = None,
+        uniq_id: str = None,
+        start_time: datetime = None,
+        end_time: datetime = None,
+        audio_file: str = None,
+        tts_file: str = None,
+        vad_status: list = None,
+        tool_calls=None,
+        tool_call_id=None,
+    ):
         self.uniq_id = uniq_id if uniq_id is not None else str(uuid.uuid4())
         self.role = role
         self.content = content
@@ -25,7 +36,7 @@ class Dialogue:
         self.dialogue_history_path = dialogue_history_path
         self.dialogue: List[Message] = []
         # 获取当前时间
-        self.current_time  = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def put(self, message: Message):
         self.dialogue.append(message)
@@ -36,7 +47,13 @@ class Dialogue:
             if m.tool_calls is not None:
                 dialogue.append({"role": m.role, "tool_calls": m.tool_calls})
             elif m.role == "tool":
-                dialogue.append({"role": m.role, "tool_call_id": m.tool_call_id, "content": m.content})
+                dialogue.append(
+                    {
+                        "role": m.role,
+                        "tool_call_id": m.tool_call_id,
+                        "content": m.content,
+                    }
+                )
             else:
                 dialogue.append({"role": m.role, "content": m.content})
         return dialogue
@@ -47,8 +64,11 @@ class Dialogue:
             if d["role"] not in ("user", "assistant"):
                 continue
             dialogue.append(d)
-        file_name = os.path.join(self.dialogue_history_path, f"dialogue-{self.current_time}.json")
+        file_name = os.path.join(
+            self.dialogue_history_path, f"dialogue-{self.current_time}.json"
+        )
         write_json_file(file_name, dialogue)
+
 
 if __name__ == "__main__":
     d = Dialogue("../tmp/")

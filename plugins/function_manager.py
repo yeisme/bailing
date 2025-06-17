@@ -24,8 +24,10 @@ def auto_import_modules(package_name):
         importlib.import_module(full_module_name)
         logger.info(f"模块 '{full_module_name}' 已加载")
 
+
 # 自动导入 'functions' 包中的所有模块
-auto_import_modules('functions')
+auto_import_modules("functions")
+
 
 def call_function(func_name, *args, **kwargs):
     """
@@ -65,4 +67,3 @@ if __name__ == "__main__":
     result = handle_function_call()
     print(result)
     print(result.response, result.action, result.result)
-

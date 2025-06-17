@@ -15,6 +15,12 @@ You are now the examiner. Begin by simulating a genuine IELTS Speaking test scen
 
 From now on, please communicate in English and limit each reply to 50 words or less
 """
-@register_function('ielts_speaking_practice', ToolType.ADD_SYS_PROMPT)
+
+
+@register_function("ielts_speaking_practice", ToolType.ADD_SYS_PROMPT)
 def ielts_speaking_practice():
-    return ActionResponse(Action.ADDSYSTEMSPEAK, {"role":"user", "content": prompt.strip()}, "调用成功，可以开始练习")
+    return ActionResponse(
+        Action.ADDSYSTEMSPEAK,
+        {"role": "user", "content": prompt.strip()},
+        "调用成功，可以开始练习",
+    )

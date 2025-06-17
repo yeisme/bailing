@@ -28,10 +28,12 @@ class SileroVAD(VAD):
         self.sampling_rate = config.get("sampling_rate")
         self.threshold = config.get("threshold")
         self.min_silence_duration_ms = config.get("min_silence_duration_ms")
-        self.vad_iterator = VADIterator(self.model,
-                            threshold=self.threshold,
-                            sampling_rate=self.sampling_rate,
-                            min_silence_duration_ms=self.min_silence_duration_ms)
+        self.vad_iterator = VADIterator(
+            self.model,
+            threshold=self.threshold,
+            sampling_rate=self.sampling_rate,
+            min_silence_duration_ms=self.min_silence_duration_ms,
+        )
         logger.debug(f"VAD Iterator initialized with model {self.model}")
 
     @staticmethod

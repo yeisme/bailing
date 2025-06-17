@@ -34,8 +34,9 @@ def auto_import_modules(package_name):
         except Exception as e:
             logger.error(f"模块 '{full_module_name}' 加载失败")
 
+
 # 自动导入 'functions' 包中的所有模块
-auto_import_modules('plugins.functions')
+auto_import_modules("plugins.functions")
 
 
 class TaskManager:
@@ -43,7 +44,11 @@ class TaskManager:
         self.functions = read_json_file(config.get("functions_call_name"))
         aigc_manus_enabled = config.get("aigc_manus_enabled", "false")
         if not aigc_manus_enabled:
-            self.functions = [item for item in self.functions if item["function"]["name"] != 'aigc_manus']
+            self.functions = [
+                item
+                for item in self.functions
+                if item["function"]["name"] != "aigc_manus"
+            ]
         self.task_queue = queue.Queue()
         # 初始化线程池
         self.task_executor = ThreadPoolExecutor(max_workers=10)
@@ -68,6 +73,7 @@ class TaskManager:
                 except Exception as e:
                     logger.error(f"task_thread 处理出错: {e}")
                 time.sleep(2)
+
         consumer_task = threading.Thread(target=task_thread, daemon=True)
         consumer_task.start()
 
@@ -95,28 +101,45 @@ class TaskManager:
 
     def tool_call(self, func_name, func_args) -> ActionResponse:
         if func_name not in function_registry:
-            return ActionResponse(action=Action.NOTFOUND, result="没有找到相应函数", response=None)
+            return ActionResponse(
+                action=Action.NOTFOUND, result="没有找到相应函数", response=None
+            )
         func = function_registry[func_name]
-        if func.action == ToolType.NONE: #  = (1, "调用完工具后，啥也不用管")
-            future = self.task_executor.submit(self.call_function, func_name, **func_args)
+        if func.action == ToolType.NONE:  #  = (1, "调用完工具后，啥也不用管")
+            future = self.task_executor.submit(
+                self.call_function, func_name, **func_args
+            )
             self.task_queue.put(future)
             return ActionResponse(action=Action.NONE, result=None, response=None)
-        elif func.action == ToolType.WAIT: # = (2, "调用工具，等待函数返回")
-            result = self.call_function( func_name, **func_args)
-            return result
-        elif func.action == ToolType.SCHEDULER: # = (3, "定时任务，时间到了之后，直接回复")
+        elif func.action == ToolType.WAIT:  # = (2, "调用工具，等待函数返回")
             result = self.call_function(func_name, **func_args)
             return result
-        elif func.action == ToolType.TIME_CONSUMING: #  = (4, "耗时任务，需要一定时间，后台运行有结果后再回复")
-            future = self.task_executor.submit(self.call_function, func_name, **func_args)
+        elif (
+            func.action == ToolType.SCHEDULER
+        ):  # = (3, "定时任务，时间到了之后，直接回复")
+            result = self.call_function(func_name, **func_args)
+            return result
+        elif (
+            func.action == ToolType.TIME_CONSUMING
+        ):  #  = (4, "耗时任务，需要一定时间，后台运行有结果后再回复")
+            future = self.task_executor.submit(
+                self.call_function, func_name, **func_args
+            )
             self.task_queue.put(future)
-            return ActionResponse(action=Action.RESPONSE, result=None, response="您好，正在查询信息中，一会查询完我会告诉你哟")
-        elif func.action == ToolType.ADD_SYS_PROMPT: #  = (5, "增加系统指定到对话历史中去")
+            return ActionResponse(
+                action=Action.RESPONSE,
+                result=None,
+                response="您好，正在查询信息中，一会查询完我会告诉你哟",
+            )
+        elif (
+            func.action == ToolType.ADD_SYS_PROMPT
+        ):  #  = (5, "增加系统指定到对话历史中去")
             result = self.call_function(func_name, **func_args)
             return result
         else:
             result = self.call_function(func_name, **func_args)
             return result
+
 
 if __name__ == "__main__":
     pass
