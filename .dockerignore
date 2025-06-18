@@ -1,0 +1,124 @@
+# Git and version control
+.git/
+.gitignore
+.gitattributes
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files and logs
+tmp/
+*.log
+*.tmp
+*.temp
+*.cache
+
+# Audio files (if not needed for production)
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# Models (download at runtime or use volume mount)
+models/
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.onnx
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+Dockerfile.dev
+docker-compose.override.yml
+.dockerignore
+
+# Documentation
+README.md
+README_en.md
+assets/
+docs/
+
+# Task runner
+Taskfile.yaml
+Taskfile.example.yaml
+
+# Lock files (already copied in Dockerfile)
+# uv.lock (commented out as it's needed for dependency resolution)
+
+# Development and testing
+tests/
+test_*
+*_test.py
+
+# Environment variables and secrets
+.env.*
+config/*.yaml
+!config/config.yaml
+
+# Editor backups
+*~
+*.swp
+*.swo
+
+# Third party
+third_party/
+
+# Reload DLL (platform specific)
+reload_dll/
+
+# ruff
+.ruff_cache
