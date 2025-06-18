@@ -1,4 +1,4 @@
-name: 百聆（bailing） 
+name: 百聆（bailing）
 version: 1.0
 
 logging:
@@ -25,14 +25,14 @@ Recorder:
 
 ASR:
   FunASR:
-    model_dir: models/SenseVoiceSmall
+    model_dir: FunAudioLLM/SenseVoiceSmall
     output_file: tmp/
 
 VAD:
   SileroVAD:
     sampling_rate: 16000
     threshold: 0.5
-    min_silence_duration_ms: 200  # 如果说话停顿比较长，可以把这个值设置大一些
+    min_silence_duration_ms: 200 # 如果说话停顿比较长，可以把这个值设置大一些
 
 LLM:
   OpenAILLM:
@@ -67,7 +67,7 @@ Player:
 
 Rag:
   doc_path: documents/
-  emb_model: models/bge-small-zh
+  emb_model: BAAI/bge-small-zh-v1.5
   model_name: deepseek-chat
   url: https://api.deepseek.com
   api_key: null
@@ -82,8 +82,3 @@ Memory:
 TaskManager:
   functions_call_name: plugins/function_calls_config.json
   aigc_manus_enabled: false
-
-
-
-
-

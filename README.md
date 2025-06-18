@@ -13,9 +13,10 @@
 - 🔧 **模块化设计**：ASR、VAD、LLM和TTS模块相互独立，可以根据需求进行替换和升级。
 - 🧠 **智能记忆功能**：具备持续学习能力，能够记忆用户的偏好与历史对话，提供个性化的互动体验。
 - 🛠 **工具调用能力**：灵活集成外部工具，用户可通过语音直接请求信息或执行操作，提升助手的实用性。  
-- 📅 **任务管理**：高效管理用户任务，能够跟踪进度、设置提醒，并提供动态更新，确保用户不错过任何重要事项。 
+- 📅 **任务管理**：高效管理用户任务，能够跟踪进度、设置提醒，并提供动态更新，确保用户不错过任何重要事项。
 
 ## 感谢开源社区
+
 百聆的诞生，离不开开源社区的无私贡献。
 
 感谢 DeepSeek、FunASR、Silero-VAD、ChatTTS、OpenManus 等优秀的开源项目，
@@ -82,8 +83,8 @@ Robot 负责高效的任务管理与记忆管理，能够智能地处理用户�
 
 请确保你的开发环境中安装了以下工具和库：
 
-- Python 3.11 或更高版本
-- `pip` 包管理器
+- Python 3.11-3.12 版本
+- `uv` 包管理器（推荐）或 `pip` 包管理器
 - FunASR、silero-vad、deepseek、edge-tts Kokoro-82M 所需的依赖库
 
 ### 安装步骤
@@ -97,25 +98,44 @@ Robot 负责高效的任务管理与记忆管理，能够智能地处理用户�
 
 2. 安装所需依赖：
 
+    **使用 uv（推荐）：**
+
     ```bash
-    pip install -r requirements.txt
-    pip install -r third_party/OpenManus/requirements.txt 
+    # 首先安装 uv（如果没有安装）
+    pip install uv
+    
+    # 安装项目依赖
+    uv sync
+    ```
+
+    ```powershell
+    # 配置变量
+    # windows 配置 FFMPEG_DLL_PATH
+    $env:FFMPEG_DLL_PATH = "C:\path\to\ffmpeg\bin"
+
+    # 可选配置： huggingface 镜像
+    $env:HF_ENDPOINT = "https://hf-mirror.com"
     ```
 
 3. 配置环境变量：
 
      - 打开config/config.yaml 配置ASR LLM等相关配置
-     - 下载SenseVoiceSmall到目录models/SenseVoiceSmall [SenseVoiceSmall下载地址](https://huggingface.co/FunAudioLLM/SenseVoiceSmall/tree/main)
-     - 去deepseek官网，获取配置api_key，[deepseek获取api_key](https://platform.deepseek.com/api_keys)，当然也可以配置openai、qwen、gemini、01yi等其他模型
-     - 如果需要使用通用AIGC配置（测试中），不可用的话，可以使用tag 分支 v0.0.1 v0.0.2 
-       - /third_party/OpenManus/config/config.toml  需要配置里面的 model、base_url、api_key 
+     - RAG功能会自动下载`BAAI/bge-small-zh-v1.5`嵌入模型，首次运行时需要网络连接
 4. 运行项目：
 
-    ```bash 
+    ```bash
     cd server
-    python server.py # 启动后端服务，也可不执行这一步
+    uv run server.py # 启动后端服务，也可不执行这一步
     ```
-    
+
+    **使用 uv 运行：**
+
+    ```bash
+    uv run python main.py
+    ```
+
+    **或直接运行：**
+
     ```bash
     python main.py
     ```

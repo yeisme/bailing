@@ -34,11 +34,16 @@ class Rag:
         self.custom_rag_prompt = PromptTemplate.from_template(self.template)
         self.llm = ChatOpenAI(
             model=config.get("model_name"),
-            base_url=config.get("base_url"),
+            base_url=config.get("url"),
             api_key=config.get("api_key"),
         )
         # 定义加载器，支持不同文档类型
-        loader = DirectoryLoader(self.doc_path, glob="**/*.md", loader_cls=TextLoader)
+        loader = DirectoryLoader(
+            self.doc_path,
+            glob="**/*.md",
+            loader_cls=TextLoader,
+            loader_kwargs={"encoding": "utf-8", "autodetect_encoding": True},
+        )
         documents = loader.load()
 
         text_splitter = RecursiveCharacterTextSplitter(
