@@ -1,26 +1,33 @@
-name: Build and Push App Docker Image
+name: Build and Push App Docker Image (Multi-arch)
 
 on:
   push:
     branches:
       - main
       - master
-    paths-ignore:
-      - "docker/dockerfile.dev"
-      - "pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/docker-build-builder.yml"
+    paths:
+      - "Dockerfile"
+      - "main.py"
+      - "bailing/**"
+      - "config/**"
+      - "plugins/**"
+      - "server/**"
+      - ".github/workflows/docker-build-app.yml"
     tags:
       - "v*"
+      - "app-v*"
   pull_request:
     branches:
       - main
       - master
-    paths-ignore:
-      - "docker/dockerfile.dev"
-      - "pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/docker-build-builder.yml"
+    paths:
+      - "Dockerfile"
+      - "main.py"
+      - "bailing/**"
+      - "config/**"
+      - "plugins/**"
+      - "server/**"
+      - ".github/workflows/docker-build-app.yml"
 
 env:
   REGISTRY: ghcr.io
@@ -38,6 +45,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo docker system prune -af
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -47,10 +60,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull latest builder image
-        run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.BUILDER_IMAGE_NAME }}:latest || echo "Builder image not found, please build it first"
 
       - name: Extract metadata for app image
         id: meta
@@ -65,22 +74,14 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push App Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=app
-          cache-to: type=gha,mode=max,scope=app
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
-            BUILDER_IMAGE=${{ env.REGISTRY }}/${{ env.BUILDER_IMAGE_NAME }}:latest
-
-      - name: Output image tags
+      - name: Build and push multi-arch
         run: |
-          echo "App image tags:"
-          echo "${{ steps.meta.outputs.tags }}"
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --file ./Dockerfile \
+            --build-arg BUILDER_IMAGE=${{ env.REGISTRY }}/${{ env.BUILDER_IMAGE_NAME }}:latest \
+            --tag ${{ env.REGISTRY }}/${{ env.APP_IMAGE_NAME }}:latest \
+            $(echo "${{ steps.meta.outputs.tags }}" | sed 's/^/--tag /' | tr '\n' ' ') \
+            --cache-from type=gha,scope=app \
+            --cache-to type=gha,mode=max,scope=app \
+            --push .
