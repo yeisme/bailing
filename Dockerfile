@@ -1,30 +1,47 @@
 # 使用预构建的builder镜像作为基础
 # 可以通过build-arg指定builder镜像
 ARG BUILDER_IMAGE=ghcr.io/yeisme/bailing-builder:latest
-FROM ${BUILDER_IMAGE} AS base
+FROM ${BUILDER_IMAGE} AS builder
 
-# 临时切换到 root 用户进行更新
-USER root
+# ---- 最终运行阶段 ----
+# 使用轻量级基础镜像
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS final
 
 # 设置工作目录
 WORKDIR /app
 
-# 设置 UV 缓存目录为可写位置
-ENV UV_CACHE_DIR=/app/.uv-cache
-RUN mkdir -p /app/.uv-cache && chown -R appuser:appgroup /app/.uv-cache
+# 安装运行时的系统依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # 运行时音频库
+    libasound2 \
+    libportaudio2 \
+    # FFmpeg 运行时库
+    ffmpeg \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswresample-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# 拷贝最新的源代码（覆盖builder中的代码）
+# 从 builder 阶段拷贝已经安装好依赖的虚拟环境
+COPY --from=builder /opt/venv /opt/venv
+
+# 拷贝最新的源代码
 COPY . .
-RUN chown -R appuser:appgroup /app
 
-# 切换回 appuser
+# 创建必要的目录
+RUN mkdir -p tmp config models documents
+
+# 设置非 root 用户
+RUN addgroup --gid 1001 --system appgroup && \
+    adduser --uid 1001 --system --ingroup appgroup --no-create-home --shell /bin/false appuser && \
+    chown -R appuser:appgroup /app
+
 USER appuser
 
-# 如果依赖有变化，重新同步
-RUN uv sync --frozen
-
-# 设置环境变量
-ENV VIRTUAL_ENV=/app/.venv
+# 设置环境变量，指向拷贝过来的虚拟环境
+ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHONPATH=/app
 
