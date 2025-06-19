@@ -4,10 +4,14 @@ try:
     load_platform_libraries()
 except ImportError:
     pass
+
 import argparse
 import json
 import logging
 import requests
+
+from bailing import robot
+from bailing.utils import load_mcp_config
 
 
 # 配置日志记录
@@ -19,7 +23,6 @@ logging.basicConfig(
         logging.FileHandler("tmp/bailing.log"),  # 文件输出
     ],
 )
-from bailing import robot
 
 # 获取根 logger
 logger = logging.getLogger(__name__)
@@ -40,31 +43,49 @@ def push2web(payload):
 
 def main():
     # Create the parser
-    parser = argparse.ArgumentParser(description="Description of your script.")
+    parser = argparse.ArgumentParser(description="百聆 AI 聊天机器人")
 
     # Add arguments
-    parser.add_argument("config_path", type=str, help="配置文件", default=None)
+    parser.add_argument("config_path", type=str, help="配置文件路径", default=None)
+    parser.add_argument("--mcp-config", type=str, help="MCP 配置文件路径", default=None)
+
     # Parse arguments
     args = parser.parse_args()
     config_path = args.config_path
-    bailing_robot = robot.Robot(config_path)
+    mcp_config_path = getattr(args, "mcp_config", None)
+
+    # 加载 MCP 配置
+    mcp_config = load_mcp_config(mcp_config_path)
+
+    # 创建机器人实例
+    bailing_robot = robot.Robot(config_path, mcp_config=mcp_config)
     bailing_robot.listen_dialogue(push2web)
     bailing_robot.run()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Description of your script.")
+    parser = argparse.ArgumentParser(description="百聆 AI 聊天机器人")
 
     # Add arguments
     parser.add_argument(
-        "--config_path", type=str, help="配置文件", default="config/config.yaml"
+        "--config_path", type=str, help="配置文件路径", default="config/config.yaml"
+    )
+    parser.add_argument(
+        "--mcp-config",
+        type=str,
+        help="MCP 配置文件路径",
+        default="config/mcp-config.json",
     )
 
     # Parse arguments
     args = parser.parse_args()
     config_path = args.config_path
+    mcp_config_path = getattr(args, "mcp_config", None)
+
+    # 加载 MCP 配置
+    mcp_config = load_mcp_config(mcp_config_path)
 
     # 创建 Robot 实例并运行
-    robot = robot.Robot(config_path)
-    robot.listen_dialogue(push2web)
-    robot.run()
+    bailing_robot = robot.Robot(config_path, mcp_config=mcp_config)
+    bailing_robot.listen_dialogue(push2web)
+    bailing_robot.run()

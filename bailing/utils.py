@@ -1,6 +1,11 @@
 import yaml
 import json
 import re
+import os
+import logging
+
+# 获取 logger
+logger = logging.getLogger(__name__)
 
 
 def load_prompt(prompt_path):
@@ -16,7 +21,7 @@ def read_json_file(file_path):
             data = json.load(file)
             return data
         except json.JSONDecodeError as e:
-            print(f"解析 JSON 时出错: {e}")
+            logger.error(f"解析 JSON 时出错: {e}")
             return None
 
 
@@ -60,3 +65,58 @@ def extract_json_from_string(input_string):
     if match:
         return match.group(1)  # 返回提取的 JSON 字符串
     return None
+
+
+def get_mcp_object(mcp_config=None):
+    """从MCP配置中提取mcp对象
+
+    Args:
+        mcp_config: MCP配置对象
+
+    Returns:
+        dict: MCP对象，如果提取失败返回 None
+    """
+    if mcp_config is None:
+        logger.warning("MCP配置对象为空")
+        return None
+
+    mcp_obj = mcp_config.get("mcp")
+    if mcp_obj:
+        logger.info(f"成功提取mcp对象: {mcp_obj}")
+        return mcp_obj
+    else:
+        logger.warning("MCP配置中未找到mcp对象")
+        return None
+
+
+def load_mcp_config(mcp_config_path):
+    """加载 MCP 配置文件
+
+    Args:
+        mcp_config_path: MCP 配置文件路径
+
+    Returns:
+        dict: MCP 配置对象，如果加载失败返回 None
+    """
+    if not mcp_config_path or not os.path.exists(mcp_config_path):
+        logger.info(f"MCP 配置文件不存在: {mcp_config_path}")
+        return None
+
+    try:
+        with open(mcp_config_path, "r", encoding="utf-8") as f:
+            mcp_config = json.load(f)
+        logger.info(f"成功加载 MCP 配置文件: {mcp_config_path}")
+        return get_mcp_object(mcp_config)
+    except Exception as e:
+        logger.error(f"加载 MCP 配置文件失败: {e}")
+        return None
+
+
+if __name__ == "__main__":
+    # Example usage
+    mcp_config_path = "./config/github-copilot-mcp.example.json"
+    mcp_config = load_mcp_config(mcp_config_path)
+    if mcp_config:
+        print("MCP 配置加载成功:", mcp_config)
+    else:
+        print("MCP 配置加载失败")
