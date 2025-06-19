@@ -111,9 +111,36 @@
     <div id="dialogue-container">
         <div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
     <script>
-        const socket = io();
+            let ws;
+
+            function connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function (event) {
+                    console.log('WebSocket connected');
+                };
+
+                ws.onmessage = function (event) {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'update_dialogue') {
+                        updateDialogue(data.data);
+                    }
+                };
+
+                ws.onclose = function (event) {
+                    console.log('WebSocket disconnected');
+                    // 尝试重连
+                    setTimeout(connectWebSocket, 3000);
+                };
+
+                ws.onerror = function (error) {
+                    console.error('WebSocket error:', error);
+                };
+            }
 
         function updateDialogue(dialogue) {
             const container = document.getElementById('dialogue-container');
@@ -127,8 +154,13 @@
                 return;
             }
 
+            // 清空loading消息
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+
             // 只添加新消息
-            // ${message.role}：
             for (let i = existingCount; i < dialogue.length; i++) {
                 const message = dialogue[i];
                 const messageDiv = document.createElement('div');
@@ -145,37 +177,10 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        function updateDialogue1(dialogue) {
-            const container = document.getElementById('dialogue-container');
-            container.innerHTML = ''; // 清空当前对话历史
-
-            if (dialogue.length === 0) {
-                container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 没有对话记录</div>';
-                return;
-            }
-
-            dialogue.forEach(message => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message role-' + message.role + ' fade-in';
-                messageDiv.innerHTML = `
-                    <div class="message-content">
-                    ${message.role}：
-                    ${message.content}
-                    </div>
-                `;
-                container.appendChild(messageDiv);
-            });
-
-            // Auto-scroll to the bottom
-            container.scrollTop = container.scrollHeight;
-        }
-
-        socket.on('update_dialogue', function(data) {
-            updateDialogue(data);
-        });
-
-        // Initial connection
-        socket.emit('connect');
+            // 初始化WebSocket连接
+            window.onload = function () {
+                connectWebSocket();
+            };
     </script>
 </body>
 </html>
