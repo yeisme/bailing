@@ -8,8 +8,6 @@ logging:
 WakeWord: 百聆
 
 interrupt: false
-# 是否开启工具调用
-StartTaskMode: true
 # 具体处理时选择的模块
 selected_module:
   Recorder: RecorderPyAudio
@@ -31,7 +29,7 @@ ASR:
 VAD:
   SileroVAD:
     sampling_rate: 16000
-    threshold: 0.5
+    threshold: 1
     min_silence_duration_ms: 200 # 如果说话停顿比较长，可以把这个值设置大一些
 
 LLM:
@@ -64,13 +62,6 @@ Player:
   PygamePlayer: null
   CmdPlayer: null
   PyaudioPlayer: null
-
-Rag:
-  doc_path: documents/
-  emb_model: BAAI/bge-small-zh-v1.5
-  model_name: deepseek-chat
-  url: https://api.deepseek.com
-  api_key: null
 
 Memory:
   dialogue_history_path: tmp/

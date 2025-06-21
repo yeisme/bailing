@@ -46,13 +46,13 @@ def main():
     parser = argparse.ArgumentParser(description="百聆 AI 聊天机器人")
 
     # Add arguments
-    parser.add_argument("config_path", type=str, help="配置文件路径", default=None)
+    parser.add_argument("--config", type=str, help="配置文件路径", default=None)
     parser.add_argument("--mcp-config", type=str, help="MCP 配置文件路径", default=None)
 
     # Parse arguments
     args = parser.parse_args()
-    config_path = args.config_path
-    mcp_config_path = getattr(args, "mcp_config", None)
+    config_path = args.config
+    mcp_config_path = args.mcp_config
 
     # 加载 MCP 配置
     mcp_config = load_mcp_config(mcp_config_path)
@@ -68,19 +68,19 @@ if __name__ == "__main__":
 
     # Add arguments
     parser.add_argument(
-        "--config_path", type=str, help="配置文件路径", default="config/config.yaml"
+        "--config", type=str, help="配置文件路径", default="config/config.yaml"
     )
     parser.add_argument(
         "--mcp-config",
         type=str,
         help="MCP 配置文件路径",
-        default="config/mcp-config.json",
+        default="config/github-copilot-mcp.example.json",
     )
 
     # Parse arguments
     args = parser.parse_args()
-    config_path = args.config_path
-    mcp_config_path = getattr(args, "mcp_config", None)
+    config_path = args.config
+    mcp_config_path = args.mcp_config
 
     # 加载 MCP 配置
     mcp_config = load_mcp_config(mcp_config_path)

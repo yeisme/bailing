@@ -1,22 +1,18 @@
 import json
 import queue
 import threading
-import uuid
 from abc import ABC
 import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import argparse
 import time
 
-from bailing import recorder, player, asr, llm, tts, vad, memory, rag
+from bailing import recorder, player, asr, llm, tts, vad, memory
 from bailing.dialogue import Message, Dialogue
 from bailing.utils import (
     read_config,
     is_segment,
-    extract_json_from_string,
 )
-from plugins.registry import Action
-from plugins.task_manager import TaskManager
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +31,7 @@ sys_prompt = """
 
 
 class Robot(ABC):
-    def __init__(self, config_file):
+    def __init__(self, config_file, mcp_config=None):
         config = read_config(config_file)
         self.audio_queue = queue.Queue()
 
@@ -97,12 +93,8 @@ class Robot(ABC):
 
         self.speech = []
 
-        # 初始化单例
-        rag.Rag(config["Rag"])  # 第一次初始化
-
-        self.task_queue = queue.Queue()
-        self.task_manager = TaskManager(config.get("TaskManager"), self.task_queue)
-        self.start_task_mode = config.get("StartTaskMode")
+        # 使用传入的 mcp_config 或从配置文件中读取
+        self.MCP = mcp_config
 
     def listen_dialogue(self, callback):
         self.callback = callback
@@ -255,156 +247,6 @@ class Robot(ABC):
         # return True
         return tts_file
 
-    def chat_tool(self, query):
-        # 打印逐步生成的响应内容
-        start = 0
-        try:
-            start_time = time.time()  # 记录开始时间
-            llm_responses = self.llm.response_call(
-                self.dialogue.get_llm_dialogue(),
-                functions_call=self.task_manager.get_functions(),
-            )
-        except Exception as e:
-            # self.chat_lock = False
-            logger.error(f"LLM 处理出错 {query}: {e}")
-            return []
-
-        tool_call_flag = False
-        response_message = []
-        # tool call 参数
-        function_name = None
-        function_id = None
-        function_arguments = ""
-        content_arguments = ""
-        for chunk in llm_responses:
-            content, tools_call = chunk
-            if content is not None and len(content) > 0:
-                if len(response_message) <= 0 and content == "```":
-                    tool_call_flag = True
-            if tools_call is not None:
-                tool_call_flag = True
-                if tools_call[0].id is not None:
-                    function_id = tools_call[0].id
-                if tools_call[0].function.name is not None:
-                    function_name = tools_call[0].function.name
-                if tools_call[0].function.arguments is not None:
-                    function_arguments += tools_call[0].function.arguments
-            if content is not None and len(content) > 0:
-                if tool_call_flag:
-                    content_arguments += content
-                else:
-                    response_message.append(content)
-                    end_time = time.time()  # 记录结束时间
-                    logger.debug(
-                        f"大模型返回时间时间: {end_time - start_time} 秒, 生成token={content}"
-                    )
-                    if is_segment(response_message):
-                        segment_text = "".join(response_message[start:])
-                        # 为了保证语音的连贯，至少2个字才转tts
-                        if len(segment_text) <= max(2, start):
-                            continue
-                        future = self.executor.submit(self.speak_and_play, segment_text)
-                        self.tts_queue.put(future)
-                        # futures.append(future)
-                        start = len(response_message)
-
-        if not tool_call_flag:
-            if start < len(response_message):
-                segment_text = "".join(response_message[start:])
-                future = self.executor.submit(self.speak_and_play, segment_text)
-                self.tts_queue.put(future)
-        else:
-            # 处理函数调用
-            if function_id is None:
-                a = extract_json_from_string(content_arguments)
-                if a is not None:
-                    content_arguments_json = json.loads(a)
-                    function_name = content_arguments_json["function_name"]
-                    function_arguments = json.dumps(
-                        content_arguments_json["args"], ensure_ascii=False
-                    )
-                    function_id = str(uuid.uuid4().hex)
-                else:
-                    return []
-                function_arguments = json.loads(function_arguments)
-            logger.info(
-                f"function_name={function_name}, function_id={function_id}, function_arguments={function_arguments}"
-            )
-            # 调用工具
-            result = self.task_manager.tool_call(function_name, function_arguments)
-            if result.action == Action.NOTFOUND:  # = (0, "没有找到函数")
-                logger.error(f"没有找到函数{function_name}")
-                return []
-            elif result.action == Action.NONE:  # = (1,  "啥也不干")
-                return []
-            elif result.action == Action.RESPONSE:  # = (2, "直接回复")
-                future = self.executor.submit(self.speak_and_play, result.response)
-                self.tts_queue.put(future)
-                return [result.response]
-            elif result.action == Action.REQLLM:  # = (3, "调用函数后再请求llm生成回复")
-                # 添加工具内容
-                self.dialogue.put(
-                    Message(
-                        role="assistant",
-                        tool_calls=[
-                            {
-                                "id": function_id,
-                                "function": {
-                                    "arguments": json.dumps(
-                                        function_arguments, ensure_ascii=False
-                                    ),
-                                    "name": function_name,
-                                },
-                                "type": "function",
-                                "index": 0,
-                            }
-                        ],
-                    )
-                )
-
-                self.dialogue.put(
-                    Message(
-                        role="tool", tool_call_id=function_id, content=result.result
-                    )
-                )
-                self.chat_tool(query)
-            elif result.action == Action.ADDSYSTEM:  # = (4, "添加系统prompt到对话中去")
-                self.dialogue.put(Message(**result.result))
-                return []
-            elif (
-                result.action == Action.ADDSYSTEMSPEAK
-            ):  # = (5, "添加系统prompt到对话中去&主动说话")
-                self.dialogue.put(
-                    Message(
-                        role="assistant",
-                        tool_calls=[
-                            {
-                                "id": function_id,
-                                "function": {
-                                    "arguments": json.dumps(
-                                        function_arguments, ensure_ascii=False
-                                    ),
-                                    "name": function_name,
-                                },
-                                "type": "function",
-                                "index": 0,
-                            }
-                        ],
-                    )
-                )
-
-                self.dialogue.put(
-                    Message(
-                        role="tool", tool_call_id=function_id, content=result.response
-                    )
-                )
-                self.dialogue.put(Message(**result.result))
-                self.dialogue.put(Message(role="user", content="ok"))
-                return self.chat_tool(query)
-            else:
-                logger.error(f"not found action type: {result.action}")
-        return response_message
-
     def chat(self, query):
         self.dialogue.put(Message(role="user", content=query))
         response_message = []
@@ -466,6 +308,14 @@ class Robot(ABC):
             json.dumps(self.dialogue.get_llm_dialogue(), indent=4, ensure_ascii=False)
         )
         return True
+
+    def mcp(self):
+        """
+        调用MCP模式
+            尽在模型支持函数调用的情况下使用
+        TODO: MCP 模式的实现
+        """
+        pass
 
 
 if __name__ == "__main__":
