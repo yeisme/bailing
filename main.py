@@ -46,27 +46,6 @@ def main():
     parser = argparse.ArgumentParser(description="百聆 AI 聊天机器人")
 
     # Add arguments
-    parser.add_argument("--config", type=str, help="配置文件路径", default=None)
-    parser.add_argument("--mcp-config", type=str, help="MCP 配置文件路径", default=None)
-
-    # Parse arguments
-    args = parser.parse_args()
-    config_path = args.config
-    mcp_config_path = args.mcp_config
-
-    # 加载 MCP 配置
-    mcp_config = load_mcp_config(mcp_config_path)
-
-    # 创建机器人实例
-    bailing_robot = robot.Robot(config_path, mcp_config=mcp_config)
-    bailing_robot.listen_dialogue(push2web)
-    bailing_robot.run()
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="百聆 AI 聊天机器人")
-
-    # Add arguments
     parser.add_argument(
         "--config", type=str, help="配置文件路径", default="config/config.yaml"
     )
@@ -85,7 +64,11 @@ if __name__ == "__main__":
     # 加载 MCP 配置
     mcp_config = load_mcp_config(mcp_config_path)
 
-    # 创建 Robot 实例并运行
+    # 创建机器人实例
     bailing_robot = robot.Robot(config_path, mcp_config=mcp_config)
     bailing_robot.listen_dialogue(push2web)
     bailing_robot.run()
+
+
+if __name__ == "__main__":
+    main()
