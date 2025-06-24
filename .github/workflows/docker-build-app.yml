@@ -7,11 +7,7 @@ on:
       - master
     paths:
       - "Dockerfile"
-      - "main.py"
-      - "bailing/**"
-      - "config/**"
-      - "plugins/**"
-      - "server/**"
+      - "*.py"
       - ".github/workflows/docker-build-app.yml"
     tags:
       - "v*"

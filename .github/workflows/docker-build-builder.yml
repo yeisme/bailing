@@ -7,8 +7,6 @@ on:
       - master
     paths:
       - "docker/dockerfile.dev"
-      - "pyproject.toml"
-      - "uv.lock"
       - ".github/workflows/docker-build-builder.yml"
     tags:
       - "builder-v*"
