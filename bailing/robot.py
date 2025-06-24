@@ -313,8 +313,42 @@ class Robot(ABC):
         start = 0
         self.chat_lock = True
 
+        # 判断是否支持 function call
         if hasattr(self, "start_task_mode") and self.start_task_mode:
-            response_message = self.chat_tool(query)
+            if (
+                hasattr(self.llm, "supports_function_call")
+                and self.llm.supports_function_call
+            ):
+                response_message = self.chat_tool(query)
+            else:
+                logger.warning(
+                    "当前 LLM 不支持 function call，已自动降级为普通对话模式。"
+                )
+                # 降级为普通对话
+                try:
+                    start_time = time.time()
+                    llm_responses = self.llm.response(self.dialogue.get_llm_dialogue())
+                except Exception as e:
+                    self.chat_lock = False
+                    logger.error(f"LLM 处理出错 {query}: {e}")
+                    return None
+                for content in llm_responses:
+                    response_message.append(content)
+                    end_time = time.time()
+                    logger.debug(
+                        f"大模型返回时间时间: {end_time - start_time} 秒, 生成token={content}"
+                    )
+                    if is_segment(response_message):
+                        segment_text = "".join(response_message[start:])
+                        if len(segment_text) <= max(2, start):
+                            continue
+                        future = self.executor.submit(self.speak_and_play, segment_text)
+                        self.tts_queue.put(future)
+                        start = len(response_message)
+                if start < len(response_message):
+                    segment_text = "".join(response_message[start:])
+                    future = self.executor.submit(self.speak_and_play, segment_text)
+                    self.tts_queue.put(future)
         else:
             # 提交 LLM 任务
             try:
@@ -333,13 +367,11 @@ class Robot(ABC):
                 )
                 if is_segment(response_message):
                     segment_text = "".join(response_message[start:])
-                    # 为了保证语音的连贯，至少2个字才转tts
                     if len(segment_text) <= max(2, start):
                         continue
                     future = self.executor.submit(self.speak_and_play, segment_text)
                     self.tts_queue.put(future)
                     start = len(response_message)
-
             # 处理剩余的响应
             if start < len(response_message):
                 segment_text = "".join(response_message[start:])
@@ -361,8 +393,14 @@ class Robot(ABC):
         """
         调用MCP模式
             尽在模型支持函数调用的情况下使用
-        TODO: MCP 模式的实现
         """
+        if not (
+            hasattr(self.llm, "supports_function_call")
+            and self.llm.supports_function_call
+        ):
+            logger.warning("当前 LLM 不支持 function call，MCP 模式不可用。")
+            return None
+        # TODO: MCP 模式的实现
         pass
 
 

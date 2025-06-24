@@ -10,6 +10,11 @@ class LLM(ABC):
     def response(self, dialogue):
         pass
 
+    def response_call(self, dialogue, functions_call):
+        # 默认降级实现：直接调用 response，tool_calls 设为 None
+        for chunk in self.response(dialogue):
+            yield chunk, None
+
 
 class OpenAILLM(LLM):
     def __init__(self, config):
@@ -17,30 +22,36 @@ class OpenAILLM(LLM):
         self.api_key = config.get("api_key")
         self.base_url = config.get("url")
         self.client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
+        # 检查是否支持 function call
+        self.supports_function_call = True
+        # 可以根据模型名或配置判断是否支持 function call
+        # 这里假设所有 openai 模型都支持，如需更细致可扩展
 
     def response(self, dialogue):
         try:
-            responses = self.client.chat.completions.create(  # ) ChatCompletion.create(
+            responses = self.client.chat.completions.create(
                 model=self.model_name, messages=dialogue, stream=True
             )
             for chunk in responses:
                 yield chunk.choices[0].delta.content
-                # yield chunk.choices[0].delta.get("content", "")
         except Exception as e:
             logger.error(f"Error in response generation: {e}")
 
     def response_call(self, dialogue, functions_call):
+        if not getattr(self, "supports_function_call", True):
+            # 不支持 function call，降级为普通 response
+            for chunk in self.response(dialogue):
+                yield chunk, None
+            return
         try:
-            responses = self.client.chat.completions.create(  # ) ChatCompletion.create(
+            responses = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=dialogue,
                 stream=True,
                 tools=functions_call,
             )
-            # print(responses)
             for chunk in responses:
                 yield chunk.choices[0].delta.content, chunk.choices[0].delta.tool_calls
-                # yield chunk.choices[0].delta.get("content", "")
         except Exception as e:
             logger.error(f"Error in response generation: {e}")
 
