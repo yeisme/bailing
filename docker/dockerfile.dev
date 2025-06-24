@@ -1,12 +1,11 @@
 # ---- Builder 阶段 ----
-# 使用包含构建工具的基础镜像
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm AS builder
+# 使用官方 Python 镜像，包含构建工具
+FROM python:3.11-bookworm AS builder
 
 # 设置工作目录
 WORKDIR /app
 
 # 安装编译和系统依赖
-# 只有这个阶段需要这些大的 -dev 包
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # 音频处理依赖
     portaudio19-dev \
@@ -22,10 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 创建虚拟环境
 RUN python3 -m venv /opt/venv
-# 激活虚拟环境以便后续命令使用
 ENV PATH="/opt/venv/bin:$PATH"
 
-# 拷贝依赖文件并安装
-# 这样做可以更好地利用Docker的层缓存
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen
+# 拷贝依赖文件和源码
+COPY pyproject.toml ./
+COPY . ./
+
+# 安装依赖（开发模式）
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -e .
