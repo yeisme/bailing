@@ -175,3 +175,5 @@ cython_debug/
 # Config
 config/*.yaml
 Taskfile.yaml
+
+data/

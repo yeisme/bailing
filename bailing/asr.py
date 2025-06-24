@@ -40,7 +40,7 @@ class FunASR(ASR):
 
         self.model = AutoModel(
             model=self.model_dir,
-            vad_kwargs={"max_single_segment_time": 30000},
+            vad_kwargs={"max_single_segment_time": 300},
             disable_update=True,
             hub="hf",
             # device="cuda:0",  # 如果有GPU，可以解开这行并指定设备

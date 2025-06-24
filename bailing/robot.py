@@ -7,12 +7,13 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import argparse
 import time
 
-from bailing import recorder, player, asr, llm, tts, vad, memory
+from bailing import recorder, player, asr, llm, tts, vad, memory, rag
 from bailing.dialogue import Message, Dialogue
 from bailing.utils import (
     read_config,
     is_segment,
 )
+# 添加RAG导入
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +25,14 @@ sys_prompt = """
 #以下是历史对话摘要:
 {memory}
 
+# 文档知识库检索结果:
+{rag_context}
+
 # 回复要求
 1. 你的回复应该简短、友好、口语化强一些，回复禁止出现表情符号。
 2. 如果需要调用工具，先不要回答，调用工具后再回答，直接输出工具名和参数，输出格式```json\n{"function_name":"", "args":{}}```
+3. 如果检索到相关文档内容，请优先基于文档内容回答，并可以提及信息来源。
+4. 如果没有检索到相关内容，请基于你的知识正常回答。
 """
 
 
@@ -65,12 +71,27 @@ class Robot(ABC):
             config["Player"][config["selected_module"]["Player"]],
         )
 
-        self.memory = memory.Memory(config.get("Memory"))
-        self.prompt = sys_prompt.replace("{memory}", self.memory.get_memory()).strip()
+        # self.MCP = mcp.create_instance(
+        #     config["selected_module"]["MCP"],
+        #     config["MCP"][config["selected_module"]["MCP"]],
+        # )
 
+        self.memory = memory.Memory(config.get("Memory"))
+
+        # 初始化RAG系统
+        try:
+            self.rag = rag.create_rag_instance(documents_dir="documents")
+            logger.info("RAG系统初始化成功")
+        except Exception as e:
+            logger.warning(f"RAG系统初始化失败: {e}")
+            self.rag = None
+
+        # 初始化对话相关组件
         self.vad_queue = queue.Queue()
         self.dialogue = Dialogue(config["Memory"]["dialogue_history_path"])
-        self.dialogue.put(Message(role="system", content=self.prompt))
+
+        # 初始化系统提示词（延迟到需要时再设置）
+        self._update_system_prompt()
 
         # 保证tts是顺序的
         self.tts_queue = queue.Queue()
@@ -92,9 +113,6 @@ class Robot(ABC):
         self.callback = None
 
         self.speech = []
-
-        # 使用传入的 mcp_config 或从配置文件中读取
-        self.MCP = mcp_config
 
     def listen_dialogue(self, callback):
         self.callback = callback
@@ -157,6 +175,41 @@ class Robot(ABC):
         # tts优先级队列
         self._tts_priority()
 
+    def _update_system_prompt(self, rag_context=""):
+        """更新系统提示词，包含RAG上下文"""
+        memory_content = self.memory.get_memory()
+        self.prompt = (
+            sys_prompt.replace("{memory}", memory_content)
+            .replace("{rag_context}", rag_context)
+            .strip()
+        )
+
+        # 更新对话中的系统消息
+        if (
+            len(self.dialogue.dialogue) > 0
+            and self.dialogue.dialogue[0].role == "system"
+        ):
+            self.dialogue.dialogue[0] = Message(role="system", content=self.prompt)
+        else:
+            self.dialogue.put(Message(role="system", content=self.prompt))
+
+    def _get_rag_context(self, query: str) -> str:
+        """获取RAG检索上下文"""
+        if self.rag is None:
+            return ""
+
+        try:
+            context = self.rag.get_relevant_context(query, max_context_length=1500)
+            if context.strip():
+                logger.debug(f"RAG检索到相关内容，长度: {len(context)}")
+                return context
+            else:
+                logger.debug("RAG未检索到相关内容")
+                return ""
+        except Exception as e:
+            logger.error(f"RAG检索出错: {e}")
+            return ""
+
     def _duplex(self):
         # 处理识别结果
         data = self.vad_queue.get()
@@ -166,7 +219,8 @@ class Robot(ABC):
         vad_status = data.get("vad_statue")
         # 空闲的时候，取出耗时任务进行播放
         if (
-            not self.task_queue.empty()
+            hasattr(self, "task_queue")
+            and not self.task_queue.empty()
             and not self.vad_start
             and vad_status is None
             and not self.player.get_playing_status()
@@ -248,12 +302,18 @@ class Robot(ABC):
         return tts_file
 
     def chat(self, query):
+        # 获取RAG上下文
+        rag_context = self._get_rag_context(query)
+
+        # 更新系统提示词包含RAG上下文
+        self._update_system_prompt(rag_context)
+
         self.dialogue.put(Message(role="user", content=query))
         response_message = []
-        # futures = []
         start = 0
         self.chat_lock = True
-        if self.start_task_mode:
+
+        if hasattr(self, "start_task_mode") and self.start_task_mode:
             response_message = self.chat_tool(query)
         else:
             # 提交 LLM 任务
@@ -278,7 +338,6 @@ class Robot(ABC):
                         continue
                     future = self.executor.submit(self.speak_and_play, segment_text)
                     self.tts_queue.put(future)
-                    # futures.append(future)
                     start = len(response_message)
 
             # 处理剩余的响应
@@ -286,18 +345,7 @@ class Robot(ABC):
                 segment_text = "".join(response_message[start:])
                 future = self.executor.submit(self.speak_and_play, segment_text)
                 self.tts_queue.put(future)
-                # futures.append(future)
 
-            # 等待所有 TTS 任务完成
-            """
-            for future in futures:
-                try:
-                    playing = future.result(timeout=5)
-                except TimeoutError:
-                    logger.error("TTS 任务超时")
-                except Exception as e:
-                    logger.error(f"TTS 任务出错: {e}")
-            """
         self.chat_lock = False
         # 更新对话
         if self.callback:
