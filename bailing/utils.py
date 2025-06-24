@@ -2,10 +2,8 @@ import yaml
 import json
 import re
 import os
-import logging
 
-# 获取 logger
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 
 def load_prompt(prompt_path):

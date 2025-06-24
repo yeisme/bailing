@@ -5,6 +5,7 @@ from datetime import datetime
 from bailing.utils import write_json_file
 
 
+
 class Message:
     def __init__(
         self,

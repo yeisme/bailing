@@ -1,4 +1,3 @@
-import logging
 import platform
 import queue
 import subprocess
@@ -12,7 +11,7 @@ import numpy as np
 from playsound3 import playsound
 
 
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 
 class AbstractPlayer(object):

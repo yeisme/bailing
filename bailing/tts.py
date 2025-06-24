@@ -1,22 +1,17 @@
 import asyncio
-import logging
+from bailing import logger
 import os
 import subprocess
 import time
 import uuid
-import wave
 from abc import ABC, ABCMeta, abstractmethod
 from datetime import datetime
-import pyaudio
-from pydub import AudioSegment
 from gtts import gTTS
 import edge_tts
 import ChatTTS
 import torch
 import torchaudio
 import soundfile as sf
-
-logger = logging.getLogger(__name__)
 
 
 class AbstractTTS(ABC):

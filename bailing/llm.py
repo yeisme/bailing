@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 import openai
-import logging
 
 
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 
 class LLM(ABC):

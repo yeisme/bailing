@@ -5,7 +5,13 @@ tasks:
     desc: "Run the main task"
     cmds:
       - echo Running with HF_ENDPOINT $HF_ENDPOINT and FFMPEG_DLL_PATH $FFMPEG_DLL_PATH
-      - uv run ./main.py
+      - python ./main.py
     env:
       HF_ENDPOINT: "https://hf-mirror.com"
       FFMPEG_DLL_PATH: "C:/Users/yeisme/lib/ffmpeg-n6.1/bin/"
+
+  server:
+    desc: "Run the server task"
+    cmds:
+      - echo Starting server...
+      - python ./server/server.py

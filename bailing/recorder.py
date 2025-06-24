@@ -2,10 +2,9 @@ import time
 from abc import ABC, abstractmethod
 import threading
 import queue
-import logging
 import pyaudio
 
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 
 class AbstractRecorder(ABC):

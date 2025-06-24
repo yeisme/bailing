@@ -1,14 +1,13 @@
 import json
 import os
 import glob
-import logging
 import re
 
 import openai
 
 from bailing.utils import read_json_file, write_json_file
 
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 memory_prompt_template = """
 你是一个对话记录员，负责提取和记录用户与助手之间的对话信息。请根据以下内容生成最新、最完整的对话摘要，突出与用户相关的有用信息，并确保摘要不超过800个字。历史对话摘要包含了之前记录的对话摘要，涉及用户的需求、偏好和关键问题。最近一次对话历史是最近的对话记录，包含用户和助手之间的具体交流内容。

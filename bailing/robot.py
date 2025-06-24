@@ -2,7 +2,8 @@ import json
 import queue
 import threading
 from abc import ABC
-import logging
+from bailing import logger
+
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import argparse
 import time
@@ -15,7 +16,6 @@ from bailing.utils import (
 )
 # 添加RAG导入
 
-logger = logging.getLogger(__name__)
 
 # 由于deepseek工具调用不太准，经常会输出到content，所以显示指明参数
 sys_prompt = """

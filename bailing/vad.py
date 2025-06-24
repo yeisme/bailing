@@ -1,9 +1,5 @@
-import os
-import uuid
-import wave
 from abc import ABC, abstractmethod
 import logging
-from datetime import datetime
 
 import numpy as np
 import torch
@@ -23,7 +19,7 @@ class VAD(ABC):
 
 class SileroVAD(VAD):
     def __init__(self, config):
-        print("SileroVAD", config)
+        logger.debug("Initializing SileroVAD with config: %s", config)
         self.model = load_silero_vad()
         self.sampling_rate = config.get("sampling_rate")
         self.threshold = config.get("threshold")

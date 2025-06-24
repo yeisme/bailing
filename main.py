@@ -7,25 +7,11 @@ except ImportError:
 
 import argparse
 import json
-import logging
 import requests
 
 from bailing import robot
 from bailing.utils import load_mcp_config
-
-
-# 配置日志记录
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(),  # 控制台输出
-        logging.FileHandler("tmp/bailing.log"),  # 文件输出
-    ],
-)
-
-# 获取根 logger
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 
 def push2web(payload):

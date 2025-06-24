@@ -1,4 +1,3 @@
-import logging
 import hashlib
 from typing import List, Dict, Any
 from pathlib import Path
@@ -8,7 +7,7 @@ from chromadb.utils import embedding_functions
 import markdown
 from bs4 import BeautifulSoup
 
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 
 class RAG:
@@ -180,13 +179,11 @@ class RAG:
                     continue
 
                 documents.append(chunk)
-                metadatas.append(
-                    {
-                        "file_path": str(file_path),
-                        "chunk_index": i,
-                        "file_name": file_path.name,
-                    }
-                )
+                metadatas.append({
+                    "file_path": str(file_path),
+                    "chunk_index": i,
+                    "file_name": file_path.name,
+                })
                 ids.append(doc_id)
 
         # 批量添加到数据库
@@ -214,15 +211,13 @@ class RAG:
             formatted_results = []
             if results["documents"] and results["documents"][0]:
                 for i in range(len(results["documents"][0])):
-                    formatted_results.append(
-                        {
-                            "content": results["documents"][0][i],
-                            "metadata": results["metadatas"][0][i],
-                            "distance": results["distances"][0][i]
-                            if results["distances"]
-                            else None,
-                        }
-                    )
+                    formatted_results.append({
+                        "content": results["documents"][0][i],
+                        "metadata": results["metadatas"][0][i],
+                        "distance": results["distances"][0][i]
+                        if results["distances"]
+                        else None,
+                    })
 
             return formatted_results
         except Exception as e:

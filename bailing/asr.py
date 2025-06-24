@@ -2,14 +2,12 @@ import os
 import uuid
 import wave
 from abc import ABC, abstractmethod
-import logging
 from datetime import datetime
 
 from funasr import AutoModel
 from funasr.utils.postprocess_utils import rich_transcription_postprocess
 
-
-logger = logging.getLogger(__name__)
+from bailing import logger
 
 
 class ASR(ABC):
