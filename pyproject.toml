@@ -46,3 +46,13 @@ dev = [
 
 [tool.setuptools]
 packages = ["bailing"]
+
+[project.optional-dependencies]
+indextts = [
+    "index-tts @ git+https://github.com/index-tts/index-tts.git"
+]
+server = [
+    "litestar>=2.0.0",
+    "uvicorn[standard]>=0.24.0",
+    "jinja2>=3.1.6"
+]
