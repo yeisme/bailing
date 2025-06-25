@@ -1,0 +1,46 @@
+name: bailing-app
+
+services:
+  bailing:
+    image: ghcr.io/yeisme/bailing:main
+    platform: linux/amd64,linux/arm64
+    container_name: bailing-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # 挂载配置文件
+      - ./config:/app/config
+      # 挂载数据目录
+      - ./data:/app/data
+      # 挂载临时文件目录
+      - ./tmp:/app/tmp
+      # 挂载检查点目录
+      - ./checkpoints:/app/checkpoints
+      # 挂载文档目录（如果需要）
+      - ./documents:/app/documents
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      # 如果需要GPU支持，可以添加相关环境变量
+      # - CUDA_VISIBLE_DEVICES=0
+    networks:
+      - bailing-network
+    # 如果需要GPU支持，取消下面的注释
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  bailing-network:
+    driver: bridge
